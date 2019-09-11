@@ -20,13 +20,21 @@ func main() {
 	gf := gogen.File("f.go").Package(*pkg)
 
 	err := filepath.Walk(".", func(path string, f os.FileInfo, err error) error {
+		if strings.Index(path, "node_modules") >= 0 {
+			return filepath.SkipDir
+		}
+
+		if strings.Index(path, ".git") >= 0 {
+			return filepath.SkipDir
+		}
+
 		if !strings.HasSuffix(f.Name(), ".go") {
 			return nil
 		}
 
 		snippets, err := parse.Snippets(path)
 		if err != nil {
-			panic(err)
+			fmt.Fprint(os.Stderr, err)
 		}
 
 		for _, s := range snippets {

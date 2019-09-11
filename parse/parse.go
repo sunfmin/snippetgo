@@ -20,6 +20,9 @@ type stackElement struct {
 	snippet      *Snippet
 }
 
+const markBegin = "@snippet_begin"
+const markEnd = "@snippet_end"
+
 func Snippets(file string) (r []*Snippet, err error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -30,11 +33,15 @@ func Snippets(file string) (r []*Snippet, err error) {
 	if err != nil {
 		panic(err)
 	}
-	lines := strings.Split(string(b), "\n")
+	content := string(b)
+	if strings.Index(content, markBegin) < 0 {
+		return
+	}
+	lines := strings.Split(content, "\n")
 	fset := token.NewFileSet()
 	pf, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	cs := pf.Comments
@@ -113,14 +120,14 @@ func cleanInner(lines []string) (r []string) {
 }
 
 func snippetEnd(line string) bool {
-	if strings.Index(line, "@snippet_end") < 0 {
+	if strings.Index(line, markEnd) < 0 {
 		return false
 	}
 	return true
 }
 
 func snippetName(line string) (name string, isSnippet bool) {
-	if strings.Index(line, "@snippet_begin") < 0 {
+	if strings.Index(line, markBegin) < 0 {
 		isSnippet = false
 		return
 	}

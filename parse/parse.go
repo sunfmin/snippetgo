@@ -95,6 +95,10 @@ func removeIndent(code []string) (r []string) {
 	l1 := strings.TrimSpace(code[0])
 	trimIndex := strings.Index(code[0], l1)
 	for _, c := range code {
+		if len(c) < trimIndex {
+			r = append(r, c)
+			continue
+		}
 		if len(strings.TrimSpace(c[0:trimIndex])) == 0 {
 			r = append(r, c[trimIndex:])
 			continue

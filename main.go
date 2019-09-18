@@ -14,24 +14,37 @@ import (
 
 var pkg = flag.String("pkg", "generated", "generated package name")
 
+var skipDirs = []string{
+	"node_modules/",
+	".git/",
+	"dist/",
+}
+
 func main() {
 	flag.Parse()
 
 	gf := gogen.File("f.go").Package(*pkg)
 
 	err := filepath.Walk(".", func(path string, f os.FileInfo, err error) error {
-		if strings.Index(path, "node_modules") >= 0 {
-			return filepath.SkipDir
+
+		for _, dir := range skipDirs {
+			if strings.Index(path, dir) >= 0 {
+				//fmt.Println("skipping dir", path)
+				return filepath.SkipDir
+			}
 		}
 
-		if strings.Index(path, ".git") >= 0 {
-			return filepath.SkipDir
-		}
-
-		if !strings.HasSuffix(f.Name(), ".go") {
+		if f.IsDir() {
+			//fmt.Println("is dir", path)
 			return nil
 		}
 
+		// to support other source files like js, ts, json
+		// if !strings.HasSuffix(f.Name(), ".go") {
+		//	 return nil
+		// }
+
+		//fmt.Println("is file", path)
 		snippets, err := parse.Snippets(path)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)

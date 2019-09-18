@@ -34,6 +34,23 @@ for _, c := range "Hello" {
 			},
 		},
 		{
+			name: "hello js",
+			file: "./fixtures/hello.js",
+			expected: []*parse.Snippet{
+
+				{
+					Name: "HelloworldJS",
+					Code: `components: {
+    EditorContent,
+    EditorMenuBubble,
+    Icon,
+},
+
+props: ['value'],`,
+				},
+			},
+		},
+		{
 			name: "error1",
 			file: "./fixtures/error1.go",
 			err:  "not matched",

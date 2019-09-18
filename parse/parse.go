@@ -2,9 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -16,8 +13,8 @@ type Snippet struct {
 }
 
 type stackElement struct {
-	startComment ast.Node
-	snippet      *Snippet
+	startIndex int
+	snippet    *Snippet
 }
 
 const markBegin = "@snippet_begin"
@@ -28,6 +25,7 @@ func Snippets(file string) (r []*Snippet, err error) {
 	if err != nil {
 		panic(err)
 	}
+	defer f.Close()
 
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
@@ -38,31 +36,25 @@ func Snippets(file string) (r []*Snippet, err error) {
 		return
 	}
 	lines := strings.Split(content, "\n")
-	fset := token.NewFileSet()
-	pf, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
-	if err != nil {
-		return
-	}
 
-	cs := pf.Comments
 	var stack []*stackElement
 
-	for _, c := range cs {
+	for i, c := range lines {
 
-		if name, ok := snippetName(c.Text()); ok {
+		if name, ok := snippetName(c); ok {
 			stack = append(stack, &stackElement{
-				startComment: c,
-				snippet:      &Snippet{Name: name},
+				startIndex: i,
+				snippet:    &Snippet{Name: name},
 			})
 		}
 
 		last := peek(stack)
-		if snippetEnd(c.Text()) {
+		if snippetEnd(c) {
 			if last != nil {
 				last.snippet.Code = strings.Join(
 					removeIndent(
 						cleanInner(
-							lines[fset.Position(last.startComment.Pos()).Line:fset.Position(c.Pos()).Line],
+							lines[last.startIndex:i],
 						),
 					),
 					"\n",
@@ -70,14 +62,14 @@ func Snippets(file string) (r []*Snippet, err error) {
 				r = append(r, last.snippet)
 				stack = stack[0 : len(stack)-1]
 			} else {
-				err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %s", fset.Position(c.Pos()))
+				err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %d", i)
 				return
 			}
 		}
 	}
 
 	if len(stack) > 0 {
-		err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %s", fset.Position(stack[0].startComment.Pos()))
+		err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %d", stack[0].startIndex)
 		return
 	}
 

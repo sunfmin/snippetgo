@@ -62,14 +62,14 @@ func Snippets(file string) (r []*Snippet, err error) {
 				r = append(r, last.snippet)
 				stack = stack[0 : len(stack)-1]
 			} else {
-				err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %d", i)
+				err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %s: %d", file, i)
 				return
 			}
 		}
 	}
 
 	if len(stack) > 0 {
-		err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %d", stack[0].startIndex)
+		err = fmt.Errorf("@snippet_begin and @snipped_end not matched at %s: %d", file, stack[0].startIndex)
 		return
 	}
 

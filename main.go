@@ -13,6 +13,8 @@ import (
 )
 
 var pkg = flag.String("pkg", "generated", "generated package name")
+var dir = flag.String("dir", ".", "source code dir to scan examples")
+var sdirs = flag.String("skip-dir", "", "comma separate dirs to skip like '.git/,node_modules/'")
 
 var skipDirs = []string{
 	"node_modules/",
@@ -22,20 +24,26 @@ var skipDirs = []string{
 
 func main() {
 	flag.Parse()
+	if len(*sdirs) > 0 {
+		skipDirs = strings.Split(*sdirs, ",")
+		for i, d := range skipDirs {
+			skipDirs[i] = strings.TrimSpace(d)
+		}
+	}
 
 	gf := gogen.File("f.go").Package(*pkg)
 
-	err := filepath.Walk(".", func(path string, f os.FileInfo, err error) error {
+	err := filepath.Walk(*dir, func(path string, f os.FileInfo, err error) error {
 
 		for _, dir := range skipDirs {
 			if strings.Index(path, dir) >= 0 {
-				//fmt.Println("skipping dir", path)
+				// fmt.Println("skipping dir", path)
 				return filepath.SkipDir
 			}
 		}
 
 		if f.IsDir() {
-			//fmt.Println("is dir", path)
+			// fmt.Println("is dir", path)
 			return nil
 		}
 
@@ -44,7 +52,7 @@ func main() {
 		//	 return nil
 		// }
 
-		//fmt.Println("is file", path)
+		// fmt.Println("is file", path)
 		snippets, err := parse.Snippets(path)
 		if err != nil {
 			fmt.Fprint(os.Stderr, err)
